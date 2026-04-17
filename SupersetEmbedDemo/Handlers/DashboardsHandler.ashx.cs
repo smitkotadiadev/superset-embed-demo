@@ -27,6 +27,7 @@ namespace SupersetEmbedDemo.Handlers
                 {
                     var client = new SupersetClient();
                     dashboards = await client.ListDashboardsAsync();
+                    await client.EnrichWithEmbedInfoAsync(dashboards);
                 }
 
                 var payload = new Dictionary<string, object>

@@ -251,6 +251,42 @@ namespace SupersetEmbedDemo.Services
             }
         }
 
+        public async Task EnrichWithEmbedInfoAsync(List<DashboardInfo> dashboards)
+        {
+            if (dashboards == null || dashboards.Count == 0) return;
+
+            using (var gate = new SemaphoreSlim(8))
+            {
+                var tasks = new List<Task>(dashboards.Count);
+                foreach (var d in dashboards)
+                {
+                    if (d == null || d.Id <= 0 || !d.Published) continue;
+                    var info = d;
+                    await gate.WaitAsync().ConfigureAwait(false);
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var uuid = await GetDashboardEmbedUuidAsync(info.Id).ConfigureAwait(false);
+                            if (!string.IsNullOrEmpty(uuid))
+                            {
+                                info.Uuid = uuid;
+                                info.EmbedEnabled = true;
+                            }
+                        }
+                        catch
+                        {
+                        }
+                        finally
+                        {
+                            gate.Release();
+                        }
+                    }));
+                }
+                await Task.WhenAll(tasks).ConfigureAwait(false);
+            }
+        }
+
         public async Task<string> GetDashboardEmbedUuidAsync(int dashboardId)
         {
             var accessToken = await GetAccessTokenAsync().ConfigureAwait(false);

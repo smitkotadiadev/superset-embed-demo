@@ -30,6 +30,7 @@ namespace SupersetEmbedDemo
             {
                 var client = new SupersetClient();
                 var dashboards = await client.ListDashboardsAsync();
+                await client.EnrichWithEmbedInfoAsync(dashboards);
                 BindDashboards(dashboards);
             }
             catch (Exception ex)
