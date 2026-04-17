@@ -1,0 +1,67 @@
+<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.Master.cs" Inherits="SupersetEmbedDemo.SiteMaster" %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Apache Superset Embed Demo - <asp:ContentPlaceHolder ID="TitlePlaceHolder" runat="server" /></title>
+    <link rel="stylesheet" href="<%: ResolveUrl("~/Styles/Site.css") %>" />
+    <asp:ContentPlaceHolder ID="HeadPlaceHolder" runat="server" />
+</head>
+<body>
+    <form id="MainForm" runat="server">
+        <header class="site-header">
+            <div class="container header-inner">
+                <a class="brand" href="<%: ResolveUrl("~/Default.aspx") %>">
+                    <span class="brand-mark"></span>
+                    <span class="brand-text">Superset Embed Demo</span>
+                </a>
+                <nav class="site-nav" aria-label="Primary">
+                    <a href="<%: ResolveUrl("~/Default.aspx") %>">Overview</a>
+                    <a href="<%: ResolveUrl("~/Reports.aspx") %>">Reports</a>
+                    <a href="<%: ResolveUrl("~/CreateReport.aspx") %>">Create report</a>
+                    <a href="<%: ResolveUrl("~/DataSources.aspx") %>">Data sources</a>
+                    <a href="<%: ResolveUrl("~/Permissions.aspx") %>">Permissions</a>
+                    <a href="<%: ResolveUrl("~/Limitations.aspx") %>">Limitations</a>
+                </nav>
+                <div class="env-indicator">
+                    <span class="env-dot" id="EnvDot" runat="server"></span>
+                    <asp:Label ID="EnvLabel" runat="server" CssClass="env-label" />
+                </div>
+            </div>
+        </header>
+
+        <main class="site-main">
+            <div class="container">
+                <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+            </div>
+        </main>
+
+        <footer class="site-footer">
+            <div class="container footer-inner">
+                <div class="footer-col">
+                    <strong>Superset Embed Demo</strong>
+                    <p>Classic ASP.NET Web Forms reference implementation for embedding
+                        <a href="https://superset.apache.org/" target="_blank" rel="noopener">Apache Superset</a>
+                        dashboards.</p>
+                </div>
+                <div class="footer-col">
+                    <strong>Configuration</strong>
+                    <p>Superset URL: <code><asp:Literal ID="ConfigBaseUrl" runat="server" /></code><br />
+                        Demo mode: <code><asp:Literal ID="ConfigDemoMode" runat="server" /></code></p>
+                    <p><em>Edit <code>Web.config</code> to point to your Superset instance.</em></p>
+                </div>
+                <div class="footer-col">
+                    <strong>Related endpoints</strong>
+                    <ul>
+                        <li><code>/Handlers/GuestTokenHandler.ashx</code></li>
+                        <li><code>/Handlers/DashboardsHandler.ashx</code></li>
+                        <li><code>/Handlers/DataSourceProxyHandler.ashx</code></li>
+                    </ul>
+                </div>
+            </div>
+        </footer>
+    </form>
+</body>
+</html>
