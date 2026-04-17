@@ -136,12 +136,11 @@ namespace SupersetEmbedDemo
         private static List<object> BuildRlsForUser(SupersetUser user)
         {
             var list = new List<object>();
-            if (!string.IsNullOrEmpty(user.TenantId))
+            var template = SupersetSettings.TenantRlsClauseTemplate;
+            if (!string.IsNullOrWhiteSpace(template) && !string.IsNullOrEmpty(user.TenantId))
             {
-                list.Add(new Dictionary<string, object>
-                {
-                    { "clause", "tenant_id = '" + user.TenantId.Replace("'", "''") + "'" }
-                });
+                var clause = template.Replace("{tenantId}", user.TenantId.Replace("'", "''"));
+                list.Add(new Dictionary<string, object> { { "clause", clause } });
             }
             return list;
         }

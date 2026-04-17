@@ -122,25 +122,29 @@ namespace SupersetEmbedDemo.Handlers
         {
             var rules = new List<RlsRule>();
 
-            if (!string.IsNullOrEmpty(user.TenantId) && !user.TenantId.Equals("default", StringComparison.OrdinalIgnoreCase))
+            var template = SupersetSettings.TenantRlsClauseTemplate;
+            if (!string.IsNullOrWhiteSpace(template)
+                && !string.IsNullOrEmpty(user.TenantId)
+                && !user.TenantId.Equals("default", StringComparison.OrdinalIgnoreCase))
             {
-                rules.Add(new RlsRule { Clause = "tenant_id = '" + SqlEscape(user.TenantId) + "'" });
+                rules.Add(new RlsRule { Clause = template.Replace("{tenantId}", SqlEscape(user.TenantId)) });
             }
 
-            if (!payload.ContainsKey("rls") || !(payload["rls"] is System.Collections.ArrayList extraRls))
-            {
-                return rules;
-            }
+            if (!payload.ContainsKey("rls")) return rules;
+            var extraRls = payload["rls"] as System.Collections.ArrayList;
+            if (extraRls == null) return rules;
 
             foreach (var item in extraRls)
             {
-                if (!(item is Dictionary<string, object> entry)) continue;
+                var entry = item as Dictionary<string, object>;
+                if (entry == null) continue;
                 var clause = GetString(entry, "clause");
                 if (string.IsNullOrWhiteSpace(clause)) continue;
 
                 var rule = new RlsRule { Clause = clause };
-                if (entry.ContainsKey("dataset") && int.TryParse(
-                    entry["dataset"]?.ToString(), out var datasetId))
+                int datasetId;
+                if (entry.ContainsKey("dataset") && entry["dataset"] != null &&
+                    int.TryParse(entry["dataset"].ToString(), out datasetId))
                 {
                     rule.DatasetId = datasetId;
                 }

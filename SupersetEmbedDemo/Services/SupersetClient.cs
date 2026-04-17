@@ -273,11 +273,13 @@ namespace SupersetEmbedDemo.Services
                             Truncate(body, 500));
                     }
                     var dict = JsonUtil.ParseObject(body);
-                    if (dict != null && dict.ContainsKey("result") &&
-                        dict["result"] is Dictionary<string, object> result &&
-                        result.ContainsKey("uuid"))
+                    if (dict != null && dict.ContainsKey("result"))
                     {
-                        return result["uuid"] as string;
+                        var result = dict["result"] as Dictionary<string, object>;
+                        if (result != null && result.ContainsKey("uuid"))
+                        {
+                            return result["uuid"] as string;
+                        }
                     }
                     return null;
                 }
@@ -307,10 +309,12 @@ namespace SupersetEmbedDemo.Services
             var dict = JsonUtil.ParseObject(json);
             if (dict == null || !dict.ContainsKey("result")) return result;
 
-            if (!(dict["result"] is System.Collections.ArrayList items)) return result;
+            var items = dict["result"] as System.Collections.ArrayList;
+            if (items == null) return result;
             foreach (var itemObj in items)
             {
-                if (!(itemObj is Dictionary<string, object> item)) continue;
+                var item = itemObj as Dictionary<string, object>;
+                if (item == null) continue;
                 var info = new DashboardInfo
                 {
                     Id = ParseInt(item, "id"),
@@ -321,24 +325,32 @@ namespace SupersetEmbedDemo.Services
                     ChangedOn = ParseDate(item, "changed_on_utc")
                 };
 
-                if (item.ContainsKey("changed_by") &&
-                    item["changed_by"] is Dictionary<string, object> changedBy)
+                if (item.ContainsKey("changed_by"))
                 {
-                    var first = GetString(changedBy, "first_name");
-                    var last = GetString(changedBy, "last_name");
-                    info.Owner = (first + " " + last).Trim();
+                    var changedBy = item["changed_by"] as Dictionary<string, object>;
+                    if (changedBy != null)
+                    {
+                        var first = GetString(changedBy, "first_name");
+                        var last = GetString(changedBy, "last_name");
+                        info.Owner = (first + " " + last).Trim();
+                    }
                 }
 
-                if (item.ContainsKey("tags") && item["tags"] is System.Collections.ArrayList tags)
+                if (item.ContainsKey("tags"))
                 {
-                    foreach (var tag in tags)
+                    var tags = item["tags"] as System.Collections.ArrayList;
+                    if (tags != null)
                     {
-                        if (tag is Dictionary<string, object> tagDict)
+                        foreach (var tag in tags)
                         {
-                            var name = GetString(tagDict, "name");
-                            if (!string.IsNullOrEmpty(name))
+                            var tagDict = tag as Dictionary<string, object>;
+                            if (tagDict != null)
                             {
-                                info.Tags.Add(name);
+                                var name = GetString(tagDict, "name");
+                                if (!string.IsNullOrEmpty(name))
+                                {
+                                    info.Tags.Add(name);
+                                }
                             }
                         }
                     }

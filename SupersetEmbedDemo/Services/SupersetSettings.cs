@@ -13,6 +13,7 @@ namespace SupersetEmbedDemo.Services
             "https://unpkg.com/@superset-ui/embedded-sdk");
         public static string DemoDashboardUuid => GetOptional("Superset.DemoDashboardUuid",
             "abc123-demo-dashboard-uuid");
+        public static string TenantRlsClauseTemplate => GetOptional("Superset.TenantRlsClauseTemplate", "");
 
         public static int GuestTokenTtlSeconds
         {
