@@ -112,7 +112,14 @@ CORS_OPTIONS = {
 
 TALISMAN_ENABLED = False
 WTF_CSRF_ENABLED = True
-WTF_CSRF_EXEMPT_LIST = ["superset.views.core.log", "superset.security.api"]
+WTF_CSRF_EXEMPT_LIST = [
+    "superset.views.core.log",
+    "superset.security.api",
+    "SecurityRestApi.login",
+    "SecurityRestApi.guest_token",
+    "SecurityRestApi.refresh",
+    "SecurityRestApi.logout",
+]
 
 OVERRIDE_HTTP_HEADERS = {"X-Frame-Options": ""}
 HTTP_HEADERS = {}

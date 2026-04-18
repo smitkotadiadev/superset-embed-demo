@@ -16,6 +16,7 @@ namespace SupersetEmbedDemo.Services
         private const string CacheKeyAccessToken = "__superset_access_token";
         private const string CacheKeyCsrfToken = "__superset_csrf_token";
 
+        private static CookieContainer _cookies = new CookieContainer();
         private static readonly HttpClient _http = BuildHttpClient();
         private static readonly SemaphoreSlim _tokenLock = new SemaphoreSlim(1, 1);
 
@@ -37,7 +38,7 @@ namespace SupersetEmbedDemo.Services
             {
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
                 UseCookies = true,
-                CookieContainer = new CookieContainer()
+                CookieContainer = _cookies
             };
             var client = new HttpClient(handler)
             {
@@ -47,6 +48,25 @@ namespace SupersetEmbedDemo.Services
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.UserAgent.ParseAdd("SupersetEmbedDemo/1.0 (ASP.NET)");
             return client;
+        }
+
+        private void InvalidateSession()
+        {
+            var cache = HttpRuntime.Cache;
+            cache?.Remove(CacheKeyAccessToken);
+            cache?.Remove(CacheKeyCsrfToken);
+            try
+            {
+                var jar = new CookieContainer();
+                var uri = new Uri(_baseUrl);
+                foreach (Cookie c in _cookies.GetCookies(uri))
+                {
+                    c.Expired = true;
+                }
+            }
+            catch
+            {
+            }
         }
 
         public async Task<string> GetAccessTokenAsync(bool forceRefresh = false)
@@ -152,16 +172,16 @@ namespace SupersetEmbedDemo.Services
 
         public Task<string> CreateGuestTokenAsync(GuestTokenRequest payload)
         {
-            return CreateGuestTokenInternalAsync(payload, retryOnUnauthorized: true);
+            return CreateGuestTokenInternalAsync(payload, retriesLeft: 2);
         }
 
-        private async Task<string> CreateGuestTokenInternalAsync(GuestTokenRequest payload, bool retryOnUnauthorized)
+        private async Task<string> CreateGuestTokenInternalAsync(GuestTokenRequest payload, int retriesLeft)
         {
             if (payload == null) throw new ArgumentNullException("payload");
             if (string.IsNullOrWhiteSpace(payload.DashboardUuid))
                 throw new ArgumentException("DashboardUuid is required.", "payload");
 
-            var accessToken = await GetAccessTokenAsync(forceRefresh: !retryOnUnauthorized).ConfigureAwait(false);
+            var accessToken = await GetAccessTokenAsync(forceRefresh: retriesLeft < 2).ConfigureAwait(false);
             var csrfToken = await GetCsrfTokenAsync(accessToken).ConfigureAwait(false);
 
             var user = payload.User ?? SupersetUser.Anonymous();
@@ -202,9 +222,17 @@ namespace SupersetEmbedDemo.Services
                 {
                     var respBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-                    if (response.StatusCode == HttpStatusCode.Unauthorized && retryOnUnauthorized)
+                    var needsRetry =
+                        retriesLeft > 0 &&
+                        (response.StatusCode == HttpStatusCode.Unauthorized ||
+                         (response.StatusCode == HttpStatusCode.BadRequest &&
+                          respBody != null &&
+                          respBody.IndexOf("CSRF", StringComparison.OrdinalIgnoreCase) >= 0));
+
+                    if (needsRetry)
                     {
-                        return await CreateGuestTokenInternalAsync(payload, retryOnUnauthorized: false)
+                        InvalidateSession();
+                        return await CreateGuestTokenInternalAsync(payload, retriesLeft - 1)
                             .ConfigureAwait(false);
                     }
 
